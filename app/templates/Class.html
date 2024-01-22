@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý lớp học</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        form {
+            width: 100%;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+        label {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: calc(100% - 12px);
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+
+        input[type="submit"] {
+            width: calc(100% - 24px);
+            padding: 8px;
+            margin-top: 10px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f2f2f2;
+        }
+        
+    </style>
+</head>
+
+<body>
+    <h1>Form Quản lý lớp học</h1>
+    <!-- Form thêm mới Class -->
+    <form id="class-form" action="/class" method="post">
+        <label for="classID">Mã lớp:</label>
+        <input type="text" id="classID" name="classID" required><br><br>
+
+        <label for="className">Tên lớp:</label>
+        <input type="text" id="className" name="className" required><br><br>
+
+        <label for="majors_id">Mã ngành:</label>
+        <input type="text" id="majorsID" name="majorsID" required><br><br>
+
+        <label for="classSize">Sĩ số lớp:</label>
+        <input type="text" id="classSize" name="classSize" required><br><br>
+
+        <!-- Nút thêm mới -->
+        <input type="submit" value="Thêm" onclick="addClass()">
+    </form>
+
+    <!-- Bảng hiển thị thông tin của Class -->
+    <form>
+        <table>
+            <thead>
+                <tr>
+                    <th>Mã lớp</th>
+                    <th>Tên lớp</th>
+                    <th>Mã Ngành</th>
+                    <th>Sĩ số lớp</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for class_info in classes %}
+                <tr>
+                    <td>{{ class_info.classID }}</td>
+                    <td>{{ class_info.className }}</td>
+                    <td>{{class_info.majorsID}}</td>
+                    <td>{{class_info.classSize}}</td>
+                    <td>
+                        <!-- Nút sửa và xóa -->
+                        <button type="button" onclick="editClass('{{ class_info.classID }}')"
+                            data-id="{{ class_info.classID }}">Sửa</button>
+                        <button onclick="deleteClass('{{ class_info.classID }}')">Xóa</button>
+                        <button type="submit" value="Cập nhật" onclick="updateClass()">Cập nhật</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <!-- Script để thực hiện các hàm Javascript -->
+        <script>
+            
+            
+
+            function editClass(classID) {
+    // Lấy thông tin Class từ server
+    fetch(`/edit_class/${classID}/json`, { method: 'GET' })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Lỗi HTTP! Trạng thái: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(classInfo => {
+            // Đặt giá trị của các trường input trong form
+            document.getElementById('classID').value = classInfo.classID;
+            document.getElementById('className').value = classInfo.className;
+            document.getElementById('majorsID').value = classInfo.majorsID; 
+            document.getElementById('classSize').value = classInfo.classSize;
+        })
+        .catch(error => {
+            console.error('Lỗi:', error.message);
+            // Hiển thị một thông báo lỗi cho người dùng nếu cần
+        });
+}
+
+function deleteClass(classID) {
+    // Xác nhận xóa
+    if (confirm('Bạn có chắc chắn muốn xóa lớp này không?')) {
+        // Gửi yêu cầu DELETE đến server
+        fetch(`/delete_class/${classID}`, { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                // Ghi log thông báo từ server
+                console.log(data.message);
+                // Nếu xóa thành công, loại bỏ hàng tương ứng khỏi bảng
+                if (data.message === 'Xóa lớp thành công') {
+                    const rowToDelete = document.querySelector(`tr[data-id="${classID}"]`);
+                    rowToDelete.remove();
+                }
+            })
+            .catch(error => console.error('Lỗi:', error));
+    }
+}
+
+
+            function updateClass() {
+                const classID = document.getElementById('classID').value;
+                const className = document.getElementById('className').value;
+                const majorsID = document.getElementById('majorsID').value;
+                const classSize = document.getElementById('classSize').value;
+
+
+                // Gửi yêu cầu cập nhật thông tin Class
+                fetch('/edit_class', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        classID: classID,
+                        className: className,
+                        majorsID:majorsID,
+                        classSize:classSize
+                    })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log(data.message);
+                        // Xử lý thông báo cập nhật thành công hoặc không thành công
+                        // Reload trang để cập nhật danh sách
+                        location.reload();
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+        </script>
+    </form>
+</body>
+
+</html>

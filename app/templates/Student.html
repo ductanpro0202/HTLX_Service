@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý sinh viên</title>
+
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        form {
+            width: 100%;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: calc(100% - 12px);
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+
+        input[type="submit"] {
+            width: calc(100% - 24px);
+            padding: 8px;
+            margin-top: 10px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Form Quản lý sinh viên</h1>
+    <form id="grade-form" action="/student" method="post">
+        <label for="studentID">Mã sinh viên</label>
+        <input type="text" id="studentID" name="studentID" required><br><br>
+        <label for="fullName">Họ và tên:</label>
+        <input type="text" id="fullName" name="fullName" required><br><br>
+
+        <label for="dob">Ngày sinh:</label>
+        <input type="date" id="dob" name="dob" required><br><br>
+
+        <label for="gender">Giới tính:</label>
+        <select id="gender" name="gender" required>
+            <option value="male">Nam</option>
+            <option value="female">Nữ</option>
+            <option value="other">Khác</option>
+        </select><br><br>
+
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required><br><br>
+
+        <label for="phoneNumber">Số điện thoại:</label>
+        <input type="tel" id="phoneNumber" name="phoneNumber" required><br><br>
+
+        <label for="address">Địa chỉ:</label>
+        <textarea id="address" name="address" required></textarea><br><br>
+
+        <label for="classID">Mã lớp:</label>
+        <input type="text" id="classID" name="classID" required><br><br>
+
+        <!-- Thêm -->
+        <input type="submit" value="Thêm" onclick="addStudent()">
+
+
+
+
+    </form>
+
+
+    <form>
+        <table>
+            <thead>
+                <tr>
+                    <th>Mã sinh viên</th>
+                    <th>Họ và tên</th>
+                    <th>Ngày sinh</th>
+                    <th>Giới tính</th>
+                    <th>Email</th>
+                    <th>Số điện thoại</th>
+                    <th>Địa chỉ</th>
+                    <th>Mã lớp</th>
+                    <th>Action</th>
+
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                <tr>
+                    <td>{{ student.studentID }}</td>
+                    <td>{{ student.fullName }}</td>
+                    <td>{{ student.dob }}</td>
+                    <td>{{ student.gender }}</td>
+                    <td>{{ student.email }}</td>
+                    <td>{{ student.phoneNumber }}</td>
+                    <td>{{ student.address }}</td>
+                    <td>{{ student.classID }}</td>
+                    <td>
+                        <button type="button" onclick="editStudent('{{ student.studentID }}')"
+                            data-id="{{ student.studentID }}">Sửa</button>
+
+
+                        <button onclick="deleteStudent('{{ student.studentID }}')">Xóa</button>
+                        <button type="submit" value="Cập nhật" onclick="updateStudent()">Cập nhật</button>
+
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <script>
+
+
+            function updateStudent() {
+                const studentID = document.getElementById('studentID').value;
+                const fullName = document.getElementById('fullName').value;
+                const dob = document.getElementById('dob').value;
+                const gender = document.getElementById('gender').value;
+                const email = document.getElementById('email').value;
+                const phoneNumber = document.getElementById('phoneNumber').value;
+                const address = document.getElementById('address').value;
+                const classID = document.getElementById('classID').value;
+
+                // Gửi yêu cầu cập nhật thông tin sinh viên
+                fetch('/edit_student', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        studentID: studentID,
+                        fullName: fullName,
+                        dob: dob,
+                        gender: gender,
+                        email: email,
+                        phoneNumber: phoneNumber,
+                        address: address,
+                        classID: classID
+                    })
+                })
+                .then(response => response.json())
+                    .then(data => {
+                        console.log(data.message);
+                        // Xử lý thông báo cập nhật thành công hoặc không thành công
+                        // Reload trang để cập nhật danh sách
+                        location.reload();
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+
+            function editStudent(studentID) {
+                // Lấy thông tin sinh viên từ server
+                fetch(`/edit_student/${studentID}/json`, { method: 'GET' })
+                    .then(response => response.json())
+                    .then(student => {
+                        // Set giá trị của các trường input trong form
+                        document.getElementById('studentID').value = student.studentID;
+                        document.getElementById('fullName').value = student.fullName;
+                        document.getElementById('dob').value = student.dob;
+                        document.getElementById('gender').value = student.gender;
+                        document.getElementById('email').value = student.email;
+                        document.getElementById('phoneNumber').value = student.phoneNumber;
+                        document.getElementById('address').value = student.address;
+                        document.getElementById('classID').value = student.classID;
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+
+            function deleteStudent(studentID) {
+                // Gửi yêu cầu xóa sinh viên có studentID khỏi cơ sở dữ liệu
+                fetch(`/delete_student/${studentID}`, { method: 'DELETE' })
+                    .then(response => response.json())
+                    .then(data => {
+                        // In thông báo từ server
+                        console.log(data.message);
+                        // Nếu xóa thành công, xóa hàng tương ứng trong bảng ngay trên trình duyệt
+                        if (data.message === 'Xóa sinh viên thành công') {
+                            const rowToDelete = document.querySelector(`tr[data-id="${studentID}"]`);
+                            rowToDelete.remove();
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+
+
+
+
+
+        </script>
+    </form>
+
+</body>
+
+</html>

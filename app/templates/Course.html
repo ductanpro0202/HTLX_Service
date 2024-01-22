@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý môn học</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        form {
+            width: 100%;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: calc(100% - 12px);
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+
+        input[type="submit"] {
+            width: calc(100% - 24px);
+            padding: 8px;
+            margin-top: 10px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Form Quản lý môn học</h1>
+    <!-- Form thêm mới Course -->
+    <form id="course-form" action="/course" method="post">
+        <label for="courseID">Mã môn học:</label>
+        <input type="text" id="courseID" name="courseID" required><br><br>
+
+        <label for="courseName">Tên môn học:</label>
+        <input type="text" id="courseName" name="courseName" required><br><br>
+
+        <label for="credits">Số tín chỉ:</label>
+        <input type="text" id="credits" name="credits" required><br><br>
+
+        <!-- Nút thêm mới -->
+        <input type="submit" name="action" value="Thêm" onclick="addCourse()">
+    </form>
+
+    <!-- Bảng hiển thị thông tin của Course -->
+    <form>
+        <table id="courses-table">
+            <thead>
+                <tr>
+                    <th>Mã môn học</th>
+                    <th>Tên môn học</th>
+                    <th>Số tín chỉ</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Use appropriate templating syntax to iterate over courses -->
+                {% for course in courses %}
+                <tr data-id="{{ course.courseID }}">
+                    <td>{{ course.courseID }}</td>
+                    <td>{{ course.courseName }}</td>
+                    <td>{{ course.credits }}</td>
+                    <td>
+                        <button type="button" onclick="editCourse('{{ course.courseID }}')" data-id="{{ course.courseID }}">Sửa</button>
+                        <button onclick="deleteCourse('{{ course.courseID }}')" data-id="{{ course.courseID }}">Xóa</button>
+                        <button type="submit" value="Cập nhật" onclick="updateCourse('{{ course.courseID }}')">Cập nhật</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <script>
+            
+
+            function editCourse(courseID) {
+                fetch(`/edit_course/${courseID}/json`, { method: 'GET' })
+                    .then(response => response.json())
+                    .then(course => {
+                        document.getElementById('courseID').value = course.courseID;
+                        document.getElementById('courseName').value = course.courseName;
+                        document.getElementById('credits').value = course.credits;
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+
+            function deleteCourse(courseID) {
+                if (confirm('Are you sure you want to delete this course?')) {
+                    fetch(`/delete_course/${courseID}`, { method: 'POST' })
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log(data.message);
+                            if (data.message === 'Delete course successful') {
+                                const rowToDelete = document.querySelector(`tr[data-id="${courseID}"]`);
+                                rowToDelete.remove();
+                            }
+                        })
+                        .catch(error => console.error('Error:', error));
+                }
+            }
+
+            function updateCourse() {
+                const courseID = document.getElementById('courseID').value;
+                const courseName = document.getElementById('courseName').value;
+                const credits = document.getElementById('credits').value;
+
+    
+
+                    fetch(`/edit_course`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            courseID: courseID,
+                            courseName: courseName,
+                            credits: credits
+                        })
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log(data.message);
+                            // Xử lý thông báo cập nhật thành công hoặc không thành công
+
+                            // Làm mới trang
+                            location.reload();
+                        })
+                        .catch(error => console.error('Error:', error));
+                }
+        </script>
+    </form>
+</body>
+
+</html>

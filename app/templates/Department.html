@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý phòng ban</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        form {
+            width: 100%;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+        label {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: calc(100% - 12px);
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+
+        input[type="submit"] {
+            width: calc(100% - 24px);
+            padding: 8px;
+            margin-top: 10px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f2f2f2;
+        }
+        
+    </style>
+</head>
+
+<body>
+    <h1>Form Quản lý phòng ban</h1>
+    <!-- Form thêm mới Department -->
+    <form id="department-form" action="/department" method="post">
+        <label for="departmentID">Mã khoa</label>
+        <input type="text" id="departmentID" name="departmentID" required><br><br>
+
+        <label for="departmentName">Tên khoa:</label>
+        <input type="text" id="departmentName" name="departmentName" required><br><br>
+
+        
+
+        <!-- Nút thêm mới -->
+        <input type="submit" value="Thêm" onclick="addDepartment()">
+    </form>
+
+    <!-- Bảng hiển thị thông tin của Department -->
+    <form>
+        <table>
+            <thead>
+                <tr>
+                    <th>Mã khoa</th>
+                    <th>Tên khoa</th>
+                    <th>Action</th>
+                    
+                    
+                </tr>
+            </thead>
+            <tbody>
+                {% for department_info in departments %}
+                <tr data-id="{{ department_info.departmentID }}">
+                    <td>{{ department_info.departmentID }}</td>
+                    <td>{{ department_info.departmentName }}</td>
+                    
+                    <td>
+                        <!-- Nút sửa và xóa -->
+                        <button type="button" onclick="editDepartment('{{ department_info.departmentID }}')">Sửa</button>
+                        <button onclick="deleteDepartment('{{ department_info.departmentID }}')">Xóa</button>
+                        <button type="button" onclick="updateDepartment('{{ department_info.departmentID }}')">Cập nhật</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <script>
+            
+            function editDepartment(departmentID) {
+    // Lấy thông tin Department từ server
+    fetch(`/edit_department/${departmentID}/json`, { method: 'GET' })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Lỗi HTTP! Trạng thái: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(departmentInfo => {
+            // Đặt giá trị của các trường input trong form
+            document.getElementById('departmentID').value = departmentInfo.departmentID;
+            document.getElementById('departmentName').value = departmentInfo.departmentName;
+        })
+        .catch(error => {
+            console.error('Lỗi:', error.message);
+            // Hiển thị một thông báo lỗi cho người dùng nếu cần
+        });
+}
+
+function deleteDepartment(departmentID) {
+    // Xác nhận xóa
+    if (confirm('Bạn có chắc chắn muốn xóa phòng ban này không?')) {
+        // Gửi yêu cầu DELETE đến server
+        fetch(`/delete_department/${departmentID}`, { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                // Ghi log thông báo từ server
+                console.log(data.message);
+                // Nếu xóa thành công, loại bỏ hàng tương ứng khỏi bảng
+                if (data.message === 'Xóa phòng ban thành công') {
+                    const rowToDelete = document.querySelector(`tr[data-id="${departmentID}"]`);
+                    rowToDelete.remove();
+                }
+            })
+            .catch(error => console.error('Lỗi:', error));
+    }
+}
+
+function updateDepartment(departmentID) {
+    // Lấy thông tin Department từ form
+    const updatedDepartmentID = document.getElementById('departmentID').value;
+    const updatedDepartmentName = document.getElementById('departmentName').value;
+
+    // Gửi yêu cầu cập nhật thông tin Department
+    fetch(`/edit_department/${departmentID}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            departmentID: updatedDepartmentID,
+            departmentName: updatedDepartmentName
+        })
+    })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data.message);
+            // Reload trang để cập nhật danh sách
+            location.reload();
+        })
+        .catch(error => console.error('Lỗi:', error));
+}
+        </script>
+    </form>
+</body>
+
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý ngành học</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        form {
+            width: 100%;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10px;
+        }
+
+        input,
+        textarea {
+            width: calc(100% - 12px);
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+
+        input[type="submit"] {
+            width: calc(100% - 24px);
+            padding: 8px;
+            margin-top: 10px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Form Quản lý ngành học</h1>
+
+    <!-- Form thêm mới Majors -->
+    <form id="majors-form" action="/majors" method="post">
+        <label for="majorsID">Mã ngành:</label>
+        <input type="text" id="majorsID" name="majorsID" required><br><br>
+
+        <label for="majorsName">Tên ngành:</label>
+        <input type="text" id="majorsName" name="majorsName" required><br><br>
+
+        <label for="department_id">Mã khoa:</label>
+        <input type="text" id="department_id" name="department_id" required><br><br>
+
+        <!-- Nút thêm mới -->
+        <input type="submit" value="Thêm" onclick="addMajors()">
+    </form>
+
+    <!-- Bảng hiển thị thông tin của Majors -->
+    <table>
+        <thead>
+            <tr>
+                <th>Mã ngành</th>
+                <th>Tên ngành</th>
+                <th>Mã Khoa</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for majorsInfo in majors %}
+            <tr>
+                <td>{{ majorsInfo.majorsID }}</td>
+                <td>{{ majorsInfo.majorsName }}</td>
+                <td>{{ majorsInfo.department_id }}</td>
+                <td>
+                    <!-- Nút sửa và xóa cho Majors -->
+                    <button type="button" onclick="editMajors('{{ majorsInfo.majorsID }}')"
+                        data-id="{{ majorsInfo.majorsID }}">Sửa</button>
+                    <button onclick="deleteMajors('{{ majorsInfo.majorsID }}')">Xóa</button>
+                    <button type="submit" value="Cập nhật" onclick="updateMajors()">Cập nhật</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Script để thực hiện các hàm Javascript -->
+    <script>
+        
+
+        function editMajors(majorsID) {
+            // Lấy thông tin Majors từ server
+            fetch(`/edit_majors/${majorsID}/json`, { method: 'GET' })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Lỗi HTTP! Trạng thái: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(majorsInfo => {
+                    // Đặt giá trị của các trường input trong form
+                    document.getElementById('majorsID').value = majorsInfo.majorsID;
+                    document.getElementById('majorsName').value = majorsInfo.majorsName;
+                    document.getElementById('department_id').value = majorsInfo.department_id; 
+                })
+                .catch(error => {
+                    console.error('Lỗi:', error.message);
+                    // Hiển thị một thông báo lỗi cho người dùng nếu cần
+                });
+        }
+
+        function updateMajors() {
+            const majorsID = document.getElementById('majorsID').value;
+            const majorsName = document.getElementById('majorsName').value;
+            const department_id = document.getElementById('department_id').value;
+
+            // Gửi yêu cầu cập nhật thông tin Majors
+            fetch('/edit_majors', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    majorsID: majorsID,
+                    majorsName: majorsName,
+                    department_id: department_id
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data.message);
+                // Xử lý thông báo cập nhật thành công hoặc không thành công
+                // Reload trang để cập nhật danh sách
+                location.reload();
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function deleteMajors(majorsID) {
+            // Xác nhận xóa
+            if (confirm('Bạn có chắc chắn muốn xóa ngành này không?')) {
+                // Gửi yêu cầu DELETE đến server
+                fetch(`/delete_majors/${majorsID}`, { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        // Ghi log thông báo từ server
+                        console.log(data.message);
+                        // Nếu xóa thành công, loại bỏ hàng tương ứng khỏi bảng
+                        if (data.message === 'Xóa ngành thành công') {
+                            const rowToDelete = document.querySelector(`tr[data-id="${majorsID}"]`);
+                            rowToDelete.remove();
+                        }
+                    })
+                    .catch(error => console.error('Lỗi:', error));
+            }
+        }
+    </script>
+</body>
+
+</html>

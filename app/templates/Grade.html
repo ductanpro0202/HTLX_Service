@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý điểm sinh viên</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        form {
+            width: 100%;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+        label {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: calc(100% - 12px);
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+
+        input[type="submit"] {
+            width: calc(100% - 24px);
+            padding: 8px;
+            margin-top: 10px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f2f2f2;
+        }
+        
+    </style>
+</head>
+<body>
+    <h1>Form Quản lý Điểm sinh viên</h1>
+    <form id="grade-form" action="/grade" method="post">
+        <label for="studentID">Mã sinh viên:</label>
+        <input type="text" id="studentID" name="studentID" required><br><br>
+
+        <label for="courseID">Mã môn học:</label>
+        <input type="text" id="courseID" name="courseID" required><br><br>
+
+        <label for="midtermScore">Điểm giữa kỳ:</label>
+        <input type="text" id="midtermScore" name="midtermScore" required><br><br>
+
+        <label for="attendance">Điểm chuyên cần:</label>
+        <input type="text" id="attendance" name="attendance" required><br><br>
+
+        <label for="finalScore">Điểm cuối kỳ:</label>
+        <input type="text" id="finalScore" name="finalScore" required><br><br>
+
+        <label for="averageScore">Điểm trung bình môn:</label>
+        <input type="text" id="averageScore" name="averageScore" readonly><br><br>
+
+        <label for="schoolYear">Năm học:</label>
+        <input type="text" id="schoolYear" name="schoolYear" required><br><br>
+
+        <label for="semester">Học kỳ:</label>
+        <input type="text" id="semester" name="semester" required><br><br>
+
+        
+
+        <input type="button" value="Tính điểm trung bình" onclick="calculateAverage()">
+        <input type="submit" name="action" value="Thêm">
+        
+
+
+    </form>
+
+    <form>
+        <table id="grades-table">
+            <thead>
+                <tr>
+                    <th>Mã điểm</th>
+                    <th>Mã sinh viên</th>
+                    <th>Mã môn học</th>
+                    <th>Điểm giữa kỳ</th>
+                    <th>Điểm điểm danh</th>
+                    <th>Điểm cuối kỳ</th>
+                    <th>Điểm trung bình môn</th>
+                    <th>Năm học</th>
+                    <th>Học kỳ</th>
+                    
+                    
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Use appropriate templating syntax to iterate over grades -->
+                {% for grade in grades %}
+                    <td>{{ grade.gradeID }}</td>
+                    <td>{{ grade.studentID }}</td>
+                    <td>{{ grade.courseID }}</td>
+                    <td>{{ grade.midtermScore }}</td>
+                    <td>{{ grade.attendance }}</td>
+                    <td>{{ grade.finalScore }}</td>
+                    <td>{{grade.averageScore}}</td>
+                    <td>{{ grade.schoolYear }}</td>
+                    <td>{{ grade.semester }}</td>
+                    <td>
+                        <button type="button" onclick="editGrade('{{ grade.gradeID }}')"data-id="{{  grade.gradeID }}">Sửa</button>
+                        <button onclick="deleteGrade('{{ grade.gradeID }}')"data-id="{{  grade.gradeID }}">Xóa</button>
+                        <button type="submit" value="Cập nhật" onclick="updateGrade()">Cập nhật</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <script>
+            function calculateAverage() {
+                const midtermScore = parseFloat(document.getElementById('midtermScore').value) || 0;
+                const attendance = parseFloat(document.getElementById('attendance').value) || 0;
+                const finalScore = parseFloat(document.getElementById('finalScore').value) || 0;
+
+                const averageScore = ((midtermScore*0.2) + (attendance*0.1) + (finalScore*0.7)) ;
+
+                // Hiển thị điểm trung bình môn
+                document.getElementById('averageScore').value = averageScore.toFixed(2);
+            }
+
+            function updateGrade() {
+                
+                const studentID = document.getElementById('studentID').value;
+                const courseID = document.getElementById('courseID').value;
+                const midtermScore = document.getElementById('midtermScore').value;
+                const attendance = document.getElementById('attendance').value;
+                const finalScore = document.getElementById('finalScore').value;
+                const averageScore = document.getElementById('averageScore').value;
+                const schoolYear = document.getElementById('schoolYear').value;
+                const semester = document.getElementById('semester').value
+                
+                // Gửi yêu cầu cập nhật điểm
+                fetch('/edit_grade', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        studentID: studentID,
+                        courseID: courseID,
+                        midtermScore: midtermScore,
+                        attendance: attendance,
+                        finalScore: finalScore,
+                        averageScore:averageScore,
+                        schoolYear: schoolYear,
+                        semester: semester
+                        
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data.message);
+                    // Xử lý thông báo cập nhật thành công hoặc không thành công
+                })
+                .catch(error => console.error('Error:', error));
+            }
+                function editGrade(gradeID) {
+                // Fetch grade details from the server
+                fetch(`/edit_grade/${gradeID}/json`, { method: 'GET' })
+                    .then(response => response.json())
+                    .then(grade => {
+                        // Populate form fields with fetched information
+                        document.getElementById('studentID').value = grade.studentID;
+                        document.getElementById('courseID').value = grade.courseID;
+                        document.getElementById('midtermScore').value = grade.midtermScore;
+                        document.getElementById('attendance').value = grade.attendance;
+                        document.getElementById('finalScore').value = grade.finalScore;
+                        document.getElementById('averageScore').value = grade.averageScore;
+                        document.getElementById('schoolYear').value = grade.schoolYear;
+                        document.getElementById('semester').value = grade.semester
+                        
+                        
+                        
+                    
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+
+
+        
+        
+            function deleteGrade(gradeID) {
+                // Confirm deletion
+                if (confirm('Are you sure you want to delete this grade?')) {
+                    // Send DELETE request to the server
+                    fetch(`/delete_grade/${gradeID}`, { method: 'POST' })
+                        .then(response => response.json())
+                        .then(data => {
+                            // Log the server message
+                            console.log(data.message);
+                            // If deletion is successful, remove the corresponding row from the table
+                            if (data.message === 'Delete grade successful') {
+                                const rowToDelete = document.querySelector(`tr[data-id="${gradeID}"]`);
+                                rowToDelete.remove();
+                            }
+                        })
+                        .catch(error => console.error('Error:', error));
+                }
+            }
+           
+
+        </script>
+    </form>
+</body>
+</html>
